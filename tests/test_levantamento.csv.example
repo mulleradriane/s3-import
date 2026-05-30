@@ -1,0 +1,3 @@
+bucket_name,team,env,asset_category,category,blockers
+s3mig-test-block-invalid-cat,s3mig,dev,CATEGORIA_INVALIDA,A,
+s3mig-test-block-csv-blocker,s3mig,dev,Productive data,A,

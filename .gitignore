@@ -1,0 +1,32 @@
+# Dados sensíveis — nunca commitar
+levantamento_completo_s3.xlsx
+*.xlsx
+*.csv
+!tests/test_levantamento.csv.example
+
+# Arquivos temporários / gerados
+__pycache__/
+*.py[cod]
+*.pyo
+.python-version
+
+# Output dos testes (gerado automaticamente)
+tests/output/
+
+# Terraform state e cache local
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+tfplan.binary
+.terraform.lock.hcl
+
+# Arquivos de trabalho locais
+arquivos.txt
+*.patch
+*.diff
+.claude/
+
+# Logs e temporários
+*.log
+*.tmp

@@ -1,6 +1,9 @@
 package s3
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // Tier representa o nível de automação possível para um bucket.
 type Tier string
@@ -20,6 +23,35 @@ var ValidAssetCategories = map[string]bool{
 	"Backup":          true,
 	"Temporary data":  true,
 	"Configuration":   true,
+}
+
+// categoryNormMap mapeia variações históricas/typos para a categoria BP canônica.
+// Permite que buckets com categorias legadas passem pelo pipeline sem BLOCK.
+var categoryNormMap = map[string]string{
+	// Categorias de desenvolvimento
+	"development":       "Code",
+	"model development": "Code",
+	"embeded":           "Code",
+	"embbeded":          "Code",
+	"embedded":          "Code",
+	// Categorias temporárias / staging
+	"staging": "Temporary data",
+	"sandbox": "Temporary data",
+	// Metadados
+	"metadata": "Configuration",
+}
+
+// NormalizeAssetCategory tenta mapear uma categoria legada/com typo para o
+// equivalente canônico BP. Retorna (canonical, true) se mapeado, ou ("", false)
+// se a categoria já é válida ou desconhecida.
+func NormalizeAssetCategory(raw string) (canonical string, normalized bool) {
+	if ValidAssetCategories[raw] {
+		return raw, false // já é válida, sem alteração
+	}
+	if canon, ok := categoryNormMap[strings.ToLower(strings.TrimSpace(raw))]; ok {
+		return canon, true
+	}
+	return "", false
 }
 
 // Issue descreve um problema encontrado durante a análise do bucket.

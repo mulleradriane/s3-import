@@ -152,9 +152,22 @@ func parseRow(colIdx map[string]int, row []string, lineNum int) (CSVRecord, erro
 // Esta é a lógica de tier da fase de discovery (sem chamar AWS).
 // A classificação completa (com dados reais do bucket) é feita em extract + migrate.
 func classifyTier(rec CSVRecord) (Tier, string) {
-	// BLOCK: asset_category inválida
-	if !ValidAssetCategories[rec.AssetCategory] {
-		return TierBLOCK, fmt.Sprintf("asset_category inválida: %q (válidas: Productive data, Code, Logs, Cache, Backup, Temporary data, Configuration)", rec.AssetCategory)
+	cat := rec.AssetCategory
+
+	// Tenta normalizar categoria legada/com typo antes de validar
+	if canonical, normalized := NormalizeAssetCategory(cat); normalized {
+		return TierREVIEW, fmt.Sprintf(
+			"asset_category normalizada: %q → %q (será aplicada no main.tf — revise CHANGES.md)",
+			cat, canonical,
+		)
+	}
+
+	// BLOCK: asset_category ainda inválida após tentativa de normalização
+	if !ValidAssetCategories[cat] {
+		return TierBLOCK, fmt.Sprintf(
+			"asset_category inválida: %q (válidas: Productive data, Code, Logs, Cache, Backup, Temporary data, Configuration)",
+			cat,
+		)
 	}
 
 	// BLOCK: tem bloqueadores no CSV
@@ -173,8 +186,16 @@ func ClassifyTierFromConfig(cfg *BucketConfig) (Tier, []Issue) {
 
 	// --- BLOCK conditions ---
 
-	// asset_category inválida
-	if !ValidAssetCategories[cfg.AssetCategory] {
+	// Normaliza a categoria antes de validar
+	if canonical, normalized := NormalizeAssetCategory(cfg.AssetCategory); normalized {
+		issues = append(issues, Issue{
+			Severity: "review",
+			Code:     "ASSET_CATEGORY_NORMALIZED",
+			Message: fmt.Sprintf("asset_category normalizada: %q → %q — verifique se a categoria correta foi aplicada",
+				cfg.AssetCategory, canonical),
+		})
+		cfg.AssetCategory = canonical // aplica a normalização para o generate
+	} else if !ValidAssetCategories[cfg.AssetCategory] {
 		issues = append(issues, Issue{
 			Severity: "block",
 			Code:     "INVALID_ASSET_CATEGORY",

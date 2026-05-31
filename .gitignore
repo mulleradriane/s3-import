@@ -30,3 +30,5 @@ arquivos.txt
 # Logs e temporários
 *.log
 *.tmp
+cli/migration-cli
+cli/dist/
